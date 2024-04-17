@@ -15,5 +15,21 @@ List of libraries to install into the .venv
 -  shiny
 -  shinylive
 -  shinywidgets
--  altair
+```shell
+py -m pip install "list of external libraries"
+py -m pip freeze > requirements.txt
+```
 
+## Run app.py Locally
+Run this code in the terminal to run the app locally with quick changes.
+```shell
+shiny run --reload --launch-browser dashboard/app.py
+```
+
+# Push changes to docs folder in GitHub
+Run this code in your terminal to report changes to Github.
+```shell
+shiny static-assets remove
+shinylive export dashboard docs
+py -m http.server --directory docs --bind localhost 8008
+```
