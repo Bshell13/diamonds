@@ -5,8 +5,7 @@ from shiny import reactive, render
 from shiny.express import input, ui
 from shinyswatch import theme
 
-data = sns.load_dataset('diamonds')
-df = pd.DataFrame(data)
+diamonds_df = pd.DataFrame(sns.load_dataset('diamonds'))
 
 ui.page_opts(title="Diamonds Dataset")
 
@@ -52,21 +51,33 @@ with ui.sidebar():
     ui.input_slider(
         'carat',
         'Carat',
-        min=df['carat'].min(),
-        max=df['carat'].max(),
+        min=diamonds_df['carat'].min(),
+        max=diamonds_df['carat'].max(),
         value=[0.5, 2.0],
         step=0.01
     )
 
-with ui.card():
-    @render.data_frame
-    def diamonds_datatable():
-        return render.DataTable(filtered_data())
+with ui.layout_columns():
+    with ui.card():
+        @render.data_frame
+        def diamonds_datatable():
+            return render.DataTable(filtered_data())
+    
+    with ui.card():
+        @render.plot(alt="Seaborn scatterplot of depth vs. table")
+        def depth_table_plot():
+            ax = sns.scatterplot(
+                data=filtered_data(),
+                x='depth',
+                y='table'
+            )
 
 @reactive.calc
 def filtered_data():
-    filtered = df[df['cut'].isin(input.cut())]
-    filtered = df[df['color'].isin(input.color())]
-    filtered = df[df['clarity'].isin(input.clarity())]
-    filtered = df[df['carat'].isin(input.carat())]
-    return filtered
+    carat_bounds = list(input.carat())
+    
+    filtered_first = diamonds_df[diamonds_df['cut'].isin(input.cut())]
+    filtered_second = filtered_first[filtered_first['color'].isin(input.color())]
+    filtered_third = filtered_second[filtered_second['clarity'].isin(input.clarity())]
+    filtered_final = filtered_third[(filtered_third['carat'] >= carat_bounds[0]) & (filtered_third['carat'] <= carat_bounds[1])]
+    return filtered_final
