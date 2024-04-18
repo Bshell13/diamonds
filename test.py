@@ -1,5 +1,6 @@
 import pandas as pd
 import seaborn as sns
+import altair as alt
 
 data = sns.load_dataset('diamonds')
 
@@ -9,14 +10,19 @@ carat_max = diamonds_df['carat'].max()
 carat_min = diamonds_df['carat'].min()
 
 carat_bounds = (carat_min, carat_max)
-def filtered_data(carat_min, carat_max):
+# def filtered_data(carat_min, carat_max):
    
-    filtered = diamonds_df[diamonds_df['cut'].isin('Good')]
-    filtered = diamonds_df[diamonds_df['color'].isin('E')]
-    filtered = diamonds_df[diamonds_df['clarity'].isin('SI2')]
-    filtered = diamonds_df[(diamonds_df['carat'] >= carat_min) & (diamonds_df['carat'] <= carat_max)]
-    return filtered
+#     filtered = diamonds_df[diamonds_df['cut'].isin('Good')]
+#     filtered = diamonds_df[diamonds_df['color'].isin('E')]
+#     filtered = diamonds_df[diamonds_df['clarity'].isin('SI2')]
+#     filtered = diamonds_df[(diamonds_df['carat'] >= carat_min) & (diamonds_df['carat'] <= carat_max)]
+#     return filtered
 
-filtered = filtered_data(carat_min, carat_max)
+# filtered = filtered_data(carat_min, carat_max)
 
-print(filtered.head())
+hist = alt.Chart(diamonds_df).mark_bar().encode(
+    x='price',
+    y='count()'
+)
+
+hist.show()

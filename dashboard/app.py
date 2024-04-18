@@ -1,26 +1,20 @@
 import pandas as pd
 import seaborn as sns
+import plotly.express as px
 
 from shiny import reactive, render
 from shiny.express import input, ui
 from shinyswatch import theme
+from shinywidgets import render_plotly
+
+theme.darkly()
 
 diamonds_df = pd.DataFrame(sns.load_dataset('diamonds'))
 
 ui.page_opts(title="Diamonds Dataset")
 
 with ui.sidebar():
-    ui.input_checkbox_group(
-        'cut',
-        'Cut',
-        {
-            'Ideal': 'Ideal',
-            'Premium': 'Premium',
-            'Very Good': 'Very Good',
-            'Good': 'Good',
-            'Fair': 'Fair'
-        },
-    )
+    ui.h3('Select Characteristics')
     ui.input_checkbox_group(
         'color',
         'Color',
@@ -33,10 +27,12 @@ with ui.sidebar():
             'I': 'I',
             'J': 'J'
         },
+        selected=['D'],
+        inline=True
     )
     ui.input_checkbox_group(
         'clarity',
-        'clarity',
+        'Clarity',
         {
             'SI2': 'SI2',
             'SI1': 'SI1',
@@ -47,6 +43,8 @@ with ui.sidebar():
             'IF': 'IF',
             'FL': 'FL'
         },
+        selected=['SI2'],
+        inline=True
     )
     ui.input_slider(
         'carat',
@@ -64,20 +62,46 @@ with ui.layout_columns():
             return render.DataTable(filtered_data())
     
     with ui.card():
-        @render.plot(alt="Seaborn scatterplot of depth vs. table")
+        @render_plotly
         def depth_table_plot():
-            ax = sns.scatterplot(
-                data=filtered_data(),
-                x='depth',
-                y='table'
+            fig_1 = px.scatter(
+                filtered_data(),
+                x='table',
+                y='depth',
+                color='cut',
+                title="Depth vs. Table",
+                labels={'depth': "Depth (mm)",
+                        'table': 'Table sidth (mm)'}
             )
+            return fig_1
+
+with ui.layout_columns():
+    with ui.card():
+        @render.plot(alt="Seaborn histogram of price")
+        def price_plot():
+            ax = sns.histplot(
+                data=filtered_data(),
+                x='price',
+                bins=30
+            )
+
+    with ui.card():
+        @render_plotly
+        def altair_plot():
+            fig_2 = px.histogram(
+                filtered_data(),
+                x='price',
+                nbins=30,
+                title='Price by Chacteristics',
+                labels={'price': 'Price ($)'}
+            )
+            return fig_2
 
 @reactive.calc
 def filtered_data():
     carat_bounds = list(input.carat())
     
-    filtered_first = diamonds_df[diamonds_df['cut'].isin(input.cut())]
-    filtered_second = filtered_first[filtered_first['color'].isin(input.color())]
-    filtered_third = filtered_second[filtered_second['clarity'].isin(input.clarity())]
-    filtered_final = filtered_third[(filtered_third['carat'] >= carat_bounds[0]) & (filtered_third['carat'] <= carat_bounds[1])]
+    filtered_first = diamonds_df[diamonds_df['color'].isin(input.color())]
+    filtered_second = filtered_first[filtered_first['clarity'].isin(input.clarity())]
+    filtered_final = filtered_second[(filtered_second['carat'] >= carat_bounds[0]) & (filtered_second['carat'] <= carat_bounds[1])]
     return filtered_final

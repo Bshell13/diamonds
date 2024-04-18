@@ -15,6 +15,8 @@ List of libraries to install into the .venv
 -  shiny
 -  shinylive
 -  shinywidgets
+-  shinyswatch
+-  plotly
 ```shell
 py -m pip install "list of external libraries"
 py -m pip freeze > requirements.txt
