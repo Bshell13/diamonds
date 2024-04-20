@@ -1,11 +1,12 @@
 # Data analysis of Diamonds Dataset
+#### Brandon Shellenberger
 This repo will make a dashboard over the analysis of the diamonds dataset from the seaborn module.
 
 ## Volume of a Diamond
 In this dataset, I added a column that estimates the volume of a diamond by using the cone formula:<br>
 $`V = \pi * r^2 * \frac{h}{3}`$<br>
-r = radius<br>
-h = height<br>
+$`r`$ = radius<br>
+$`h`$ = height<br>
 
 ## Virtual Environment
 Creating a virtual environment to install external modules to the environment.
