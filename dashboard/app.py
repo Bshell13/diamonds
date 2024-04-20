@@ -1,6 +1,7 @@
 import pandas as pd
 import seaborn as sns
 import plotly.express as px
+import math
 
 from shiny import reactive, render
 from shiny.express import input, ui
@@ -11,6 +12,10 @@ theme.darkly()
 
 diamonds_df = pd.DataFrame(sns.load_dataset('diamonds'))
 
+# Estimated Volume of a diamond using the cone formula.
+pi = math.pi
+diamonds_df['rough_volume'] = round(pi * (((diamonds_df['x'] + diamonds_df['y']).mean()) / 2)**2 * (diamonds_df['z'] / 3), 2)
+
 ui.page_opts(title="Diamonds Dataset")
 
 with ui.sidebar():
@@ -19,21 +24,22 @@ with ui.sidebar():
         'color',
         'Color',
         {
-            'D': 'D',
-            'E': 'E',
-            'F': 'F',
-            'G': 'G',
-            'H': 'H',
+            'J': 'J',
             'I': 'I',
-            'J': 'J'
+            'H': 'H',
+            'G': 'G',
+            'F': 'F',
+            'E': 'E',
+            'D': 'D',
         },
-        selected=['D'],
+        selected=['J'],
         inline=True
     )
     ui.input_checkbox_group(
         'clarity',
         'Clarity',
         {
+            'I1': 'I1',
             'SI2': 'SI2',
             'SI1': 'SI1',
             'VS2': 'VS2',
@@ -41,67 +47,87 @@ with ui.sidebar():
             'VVS2': 'VVS2',
             'VVS1': 'VVS1',
             'IF': 'IF',
-            'FL': 'FL'
         },
-        selected=['SI2'],
+        selected=['I1'],
         inline=True
-    )
-    ui.input_slider(
-        'carat',
-        'Carat',
-        min=diamonds_df['carat'].min(),
-        max=diamonds_df['carat'].max(),
-        value=[0.5, 2.0],
-        step=0.01
     )
 
 with ui.layout_columns():
     with ui.card():
         @render.data_frame
         def diamonds_datatable():
-            return render.DataTable(filtered_data())
-    
-    with ui.card():
-        @render_plotly
-        def depth_table_plot():
-            fig_1 = px.scatter(
-                filtered_data(),
-                x='table',
-                y='depth',
-                color='cut',
-                title="Depth vs. Table",
-                labels={'depth': "Depth (mm)",
-                        'table': 'Table sidth (mm)'}
-            )
-            return fig_1
+            return render.DataTable(filtered_data(), height='150px')
 
 with ui.layout_columns():
-    with ui.card():
-        @render.plot(alt="Seaborn histogram of price")
-        def price_plot():
-            ax = sns.histplot(
-                data=filtered_data(),
-                x='price',
-                bins=30
-            )
+    with ui.navset_card_tab(title='Price Graphs'):
+        with ui.nav_panel('Estimated Volume'):
+            @render_plotly
+            def volume_scatter():
+                price_volume_scatter = px.scatter(
+                    filtered_data(),
+                    x='price',
+                    y='rough_volume',
+                    color='cut',
+                    title='Price vs. Estimated Volume',
+                    labels={'price': 'Price ($)',
+                            'rough_volume': 'Volume Estimated (mm^3)'}
+                )
+                return price_volume_scatter
 
-    with ui.card():
-        @render_plotly
-        def altair_plot():
-            fig_2 = px.histogram(
-                filtered_data(),
-                x='price',
-                nbins=30,
-                title='Price by Chacteristics',
-                labels={'price': 'Price ($)'}
-            )
-            return fig_2
+        with ui.nav_panel('Carat'):
+            @render_plotly
+            def carat_scatter():
+                price_carat_scatter = px.scatter(
+                    filtered_data(),
+                    x='price',
+                    y='carat',
+                    color='cut',
+                    title='Price vs. Carat',
+                    labels={'price': 'Price ($)',
+                            'carat': 'Carat'}
+                )
+                return price_carat_scatter
+
+    with ui.navset_card_tab(title='Histograms'):
+        with ui.nav_panel('Price'):
+            @render_plotly
+            def price_hist():
+                price_histogram = px.histogram(
+                    filtered_data(),
+                    x='price',
+                    nbins=30,
+                    title='Price by Chacteristics',
+                    labels={'price': 'Price ($)'}
+                )
+                return price_histogram
+        
+        with ui.nav_panel('Estemated Volume'):
+            @render_plotly
+            def volume_hist():
+                volume_histogram = px.histogram(
+                    filtered_data(),
+                    x='rough_volume',
+                    nbins=30,
+                    title='Estimated Volume by Chacteristics',
+                    labels={'rough_volume': 'Estimated Volume (mm^3)'}
+                )
+                return volume_histogram
+
+        with ui.nav_panel('Carat'):
+            @render_plotly
+            def carat_hist():
+                carat_histogram = px.histogram(
+                    filtered_data(),
+                    x='carat',
+                    nbins=30,
+                    title='Carats by Chacteristics',
+                    labels={'carat': 'Carats'}
+                )
+                return carat_histogram
 
 @reactive.calc
 def filtered_data():
-    carat_bounds = list(input.carat())
     
     filtered_first = diamonds_df[diamonds_df['color'].isin(input.color())]
     filtered_second = filtered_first[filtered_first['clarity'].isin(input.clarity())]
-    filtered_final = filtered_second[(filtered_second['carat'] >= carat_bounds[0]) & (filtered_second['carat'] <= carat_bounds[1])]
-    return filtered_final
+    return filtered_second
